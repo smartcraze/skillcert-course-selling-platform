@@ -47,8 +47,16 @@ class ApiResponse {
     return new ApiResponse(401, false, message);
   }
 
+  static forbidden(message = 'Forbidden') {
+    return new ApiResponse(403, false, message);
+  }
+
   static notFound(message = 'Not found') {
     return new ApiResponse(404, false, message);
+  }
+
+  static conflict(message = 'Conflict') {
+    return new ApiResponse(409, false, message);
   }
 
   static serverError(message = 'Server error') {

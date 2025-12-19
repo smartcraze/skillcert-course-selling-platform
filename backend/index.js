@@ -1,19 +1,24 @@
-import express from 'express'
+import express from 'express';
+import { env } from './utils/env.js';
 import { connectDB } from './db/dbconnect.js';
 import userRouter from './routes/user.routes.js';
-
-
+import courseRouter from './routes/course.routes.js';
+import categoryRouter from './routes/category.routes.js';
+import cors from 'cors';
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
-
-
-
 connectDB();
 
-const PORT =process.env.PORT || 3000;
-app.listen(PORT,()=>{
-    console.log(`app is running on http://localhost:3000`);
-})
+app.use('/api/user', userRouter);
+app.use('/api/courses', courseRouter);
+app.use('/api/categories', categoryRouter);
+
+
+const PORT = env.PORT;
+app.listen(PORT, () => {
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`📌 Environment: ${env.NODE_ENV}`);
+});
