@@ -10,7 +10,9 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('7d'),
   RZP_KEY: z.string(),
   RZP_SECRET: z.string(),
-  RZP_WEBHOOK_SECRET: z.string()
+  RZP_WEBHOOK_SECRET: z.string(),
+  RESEND_MAIL_SECRET: z.string(),
+  FRONTEND_URL: z.string().default('http://localhost:3000')
 });
 
 /**

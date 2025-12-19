@@ -11,6 +11,7 @@ import reviewRouter from './routes/review.routes.js';
 import sectionRouter from './routes/section.routes.js';
 import wishlistRouter from './routes/wishlist.routes.js';
 import lectureRouter from './routes/lecture.routes.js';
+import certificateRouter from './routes/certificate.routes.js';
 import cors from 'cors';
 
 const app = express();
@@ -29,6 +30,7 @@ app.use('/api/reviews', reviewRouter);
 app.use('/api/sections', sectionRouter);
 app.use('/api/wishlist', wishlistRouter);
 app.use('/api/lectures', lectureRouter);
+app.use('/api/certificates', certificateRouter);
 
 
 const PORT = env.PORT;

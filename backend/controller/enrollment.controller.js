@@ -4,6 +4,9 @@ import { Course } from '../model/course.model.js';
 import { Progress } from '../model/progress.model.js';
 import { Payment } from '../model/payment.model.js';
 import ApiResponse from '../utils/ApiResponse.js';
+import { sendEmail } from '../utils/sendEmail.js';
+import { certificateIssuedTemplate } from '../utils/email-template/certificate-issued.js';
+import { env } from '../utils/env.js';
 
 // Validation schema
 const enrollCourseSchema = z.object({
@@ -323,9 +326,52 @@ export const markCourseCompleted = async (req, res) => {
     enrollment.completed = true;
     await enrollment.save();
 
-    return ApiResponse.success('Course marked as completed', enrollment).send(
-      res
+    // Auto-generate certificate record
+    const { Certificate } = await import('../model/certificate.model.js');
+    const { generateCertificateId } = await import(
+      '../utils/certificateGenerator.js'
     );
+
+    const existingCertificate = await Certificate.findOne({
+      user: req.user._id,
+      course: courseId,
+    });
+
+    let certificate = null;
+    if (!existingCertificate) {
+      const certificateId = generateCertificateId();
+
+      try {
+        certificate = await Certificate.create({
+          user: req.user._id,
+          course: courseId,
+          certificateId,
+          issuedAt: new Date(),
+        });
+
+        // Send certificate issued email (background)
+        const course = await Course.findById(courseId);
+        const certificateUrl = `${env.FRONTEND_URL}/certificates/${certificateId}`;
+        
+        sendEmail({
+          to: req.user.email,
+          subject: `🏆 Your Certificate is Ready - ${course.title}`,
+          html: certificateIssuedTemplate({
+            userName: req.user.name,
+            courseTitle: course.title,
+            certificateUrl,
+            certificateId,
+          }),
+        }).catch((err) => console.error('Certificate email error:', err));
+      } catch (certError) {
+        console.error('Certificate record creation error:', certError);
+      }
+    }
+
+    return ApiResponse.success('Course marked as completed', {
+      enrollment,
+      certificate: certificate || existingCertificate,
+    }).send(res);
   } catch (error) {
     console.error('Mark course completed error:', error);
     return ApiResponse.serverError('Failed to mark course as completed').send(

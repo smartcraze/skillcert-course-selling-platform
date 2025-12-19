@@ -21,6 +21,9 @@ const userSchema = new mongoose.Schema(
     bio: String,
 
     isVerified: { type: Boolean, default: false },
+
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
   },
   { timestamps: true }
 );

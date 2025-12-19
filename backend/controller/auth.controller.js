@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { User } from '../model/user.model.js';
 import ApiResponse from '../utils/ApiResponse.js';
 import { env } from '../utils/env.js';
+import { sendEmail } from '../utils/sendEmail.js';
+import { welcomeTemplate } from '../utils/email-template/welcome.js';
 
 // Validation schemas
 const signupSchema = z.object({
@@ -58,6 +60,16 @@ export const signup = async (req, res) => {
       avatar: user.avatar,
       isVerified: user.isVerified,
     };
+
+    // Send welcome email (don't await, send in background)
+    sendEmail({
+      to: user.email,
+      subject: 'Welcome to SkillCerts! 🎓',
+      html: welcomeTemplate({
+        userName: user.name,
+        userEmail: user.email,
+      }),
+    }).catch((err) => console.error('Welcome email error:', err));
 
     return ApiResponse.created('User registered successfully', {
       user: userResponse,

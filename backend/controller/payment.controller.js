@@ -7,6 +7,8 @@ import { Enrollment } from '../model/enrollment.model.js';
 import { Progress } from '../model/progress.model.js';
 import { env } from '../utils/env.js';
 import ApiResponse from '../utils/ApiResponse.js';
+import { sendEmail } from '../utils/sendEmail.js';
+import { coursePurchasedTemplate } from '../utils/email-template/payment-done.js';
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -194,6 +196,21 @@ export const verifyPayment = async (req, res) => {
     const populatedEnrollment = await Enrollment.findById(enrollment._id)
       .populate('course', 'title slug thumbnail price level')
       .populate('user', 'name email');
+
+    // Send course purchased email (background)
+    const courseUrl = `${env.FRONTEND_URL}/courses/${populatedEnrollment.course.slug}`;
+    
+    sendEmail({
+      to: req.user.email,
+      subject: `Payment Successful - ${populatedEnrollment.course.title} 🎉`,
+      html: coursePurchasedTemplate({
+        userName: req.user.name,
+        courseTitle: populatedEnrollment.course.title,
+        courseUrl,
+        amount: payment.amount,
+        currency: payment.currency,
+      }),
+    }).catch((err) => console.error('Course purchased email error:', err));
 
     return ApiResponse.success('Payment verified and enrolled successfully', {
       payment: {
