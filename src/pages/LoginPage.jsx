@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Mail, Lock, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -21,9 +22,12 @@ export const LoginPage = () => {
 
     try {
       await login(formData);
+      toast.success('Login successful! Welcome back.');
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Failed to login');
+      const errorMessage = err.message || 'Failed to login';
+      toast.error(errorMessage);
+      setError(errorMessage);
     }
   };
 

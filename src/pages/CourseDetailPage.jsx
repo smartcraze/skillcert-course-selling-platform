@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Clock, BookOpen, Star, Users, Award, Play, Heart } from 'lucide-react';
+import { Clock, BookOpen, Star, Users, Award, Play, Heart, ChevronDown, ChevronUp, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { courseService } from '../services/courseService';
 import { enrollmentService } from '../services/enrollmentService';
 import { reviewService } from '../services/reviewService';
 import { wishlistService } from '../services/wishlistService';
+import { sectionService } from '../services/sectionService';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Card, CardContent } from '../components/ui/Card';
@@ -19,15 +21,18 @@ export const CourseDetailPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthStore();
   const [course, setCourse] = useState(null);
+  const [sections, setSections] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [error, setError] = useState('');
+  const [expandedSections, setExpandedSections] = useState(new Set());
 
   useEffect(() => {
     fetchCourseDetails();
+    fetchSections();
     fetchReviews();
     if (isAuthenticated) {
       checkEnrollment();
@@ -44,6 +49,25 @@ export const CourseDetailPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchSections = async () => {
+    try {
+      const response = await sectionService.getCourseSections(id);
+      setSections(response.data || []);
+    } catch (error) {
+      console.error('Failed to fetch sections:', error);
+    }
+  };
+
+  const toggleSection = (sectionId) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(sectionId)) {
+      newExpanded.delete(sectionId);
+    } else {
+      newExpanded.add(sectionId);
+    }
+    setExpandedSections(newExpanded);
   };
 
   const fetchReviews = async () => {
@@ -83,12 +107,15 @@ export const CourseDetailPage = () => {
       if (isInWishlist) {
         await wishlistService.removeFromWishlist(id);
         setIsInWishlist(false);
+        toast.success('Removed from wishlist');
       } else {
         await wishlistService.addToWishlist(id);
         setIsInWishlist(true);
+        toast.success('Added to wishlist');
       }
     } catch (error) {
       console.error('Failed to toggle wishlist:', error);
+      toast.error(error.message || 'Failed to update wishlist');
       setError(error.message || 'Failed to update wishlist');
     }
   };
@@ -110,9 +137,12 @@ export const CourseDetailPage = () => {
     try {
       await enrollmentService.enrollCourse(id);
       setIsEnrolled(true);
+      toast.success('Successfully enrolled in the course!');
       navigate('/my-learning');
     } catch (error) {
-      setError(error.message || 'Failed to enroll');
+      const errorMessage = error.message || 'Failed to enroll';
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setEnrolling(false);
     }
@@ -232,6 +262,83 @@ export const CourseDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Course Content Section */}
+      {sections.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Course Content</h2>
+          <div className="mb-4 text-sm text-gray-600">
+            {sections.length} sections • {sections.reduce((acc, s) => acc + (s.lectures?.length || 0), 0)} lectures
+          </div>
+          
+          <div className="space-y-3">
+            {sections.map((section) => (
+              <Card key={section._id}>
+                <CardContent className="p-0">
+                  {/* Section Header */}
+                  <button
+                    onClick={() => toggleSection(section._id)}
+                    className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <BookOpen className="w-5 h-5 text-blue-600" />
+                      <div className="text-left">
+                        <h3 className="font-semibold text-gray-900">{section.title}</h3>
+                        <p className="text-sm text-gray-600">
+                          {section.lectures?.length || 0} lectures
+                        </p>
+                      </div>
+                    </div>
+                    {expandedSections.has(section._id) ? (
+                      <ChevronUp className="w-5 h-5 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
+
+                  {/* Section Lectures */}
+                  {expandedSections.has(section._id) && section.lectures && section.lectures.length > 0 && (
+                    <div className="border-t border-gray-200 bg-gray-50">
+                      {section.lectures.map((lecture, index) => (
+                        <div
+                          key={lecture._id}
+                          className="px-6 py-3 flex items-center justify-between border-b border-gray-200 last:border-b-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            {lecture.isPreview ? (
+                              <Play className="w-4 h-4 text-blue-600" />
+                            ) : (
+                              <Lock className="w-4 h-4 text-gray-400" />
+                            )}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-gray-900">
+                                  {index + 1}. {lecture.title}
+                                </span>
+                                {lecture.isPreview && (
+                                  <Badge variant="success" className="text-xs">Free Preview</Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            {lecture.duration && (
+                              <>
+                                <Clock className="w-3 h-3" />
+                                {formatDuration(lecture.duration)}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Reviews Section */}
       {reviews.length > 0 && (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Trash2, ShoppingCart } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { wishlistService } from '../services/wishlistService';
 import { Card, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -39,7 +40,9 @@ export const WishlistPage = () => {
         ...wishlist,
         courses: wishlist.courses.filter(course => course._id !== courseId)
       });
+      toast.success('Removed from wishlist');
     } catch (error) {
+      toast.error('Failed to remove from wishlist');
       setError('Failed to remove from wishlist');
     } finally {
       setRemoving(null);

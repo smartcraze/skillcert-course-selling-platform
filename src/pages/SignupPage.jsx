@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { BookOpen, Mail, Lock, User, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
@@ -23,9 +24,12 @@ export const SignupPage = () => {
 
     try {
       await signup(formData);
+      toast.success('Account created successfully! Welcome to SkillCerts.');
       navigate('/');
     } catch (err) {
-      setError(err.message || 'Failed to sign up');
+      const errorMessage = err.message || 'Failed to sign up';
+      toast.error(errorMessage);
+      setError(errorMessage);
     }
   };
 

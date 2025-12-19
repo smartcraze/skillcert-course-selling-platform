@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { Layout } from './components/layout/Layout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
@@ -20,6 +21,25 @@ import { CourseEditPage } from './pages/CourseEditPage';
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" toastOptions={{
+        duration: 3000,
+        style: {
+          background: '#333',
+          color: '#fff',
+        },
+        success: {
+          iconTheme: {
+            primary: '#10b981',
+            secondary: '#fff',
+          },
+        },
+        error: {
+          iconTheme: {
+            primary: '#ef4444',
+            secondary: '#fff',
+          },
+        },
+      }} />
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<LoginPage />} />

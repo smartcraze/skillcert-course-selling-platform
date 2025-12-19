@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Filter, SlidersHorizontal } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { courseService } from '../services/courseService';
 import { categoryService } from '../services/categoryService';
 import { wishlistService } from '../services/wishlistService';
@@ -68,12 +69,15 @@ export const CoursesPage = () => {
       if (isInWishlist) {
         await wishlistService.removeFromWishlist(courseId);
         setWishlistIds(wishlistIds.filter(id => id !== courseId));
+        toast.success('Removed from wishlist');
       } else {
         await wishlistService.addToWishlist(courseId);
         setWishlistIds([...wishlistIds, courseId]);
+        toast.success('Added to wishlist');
       }
     } catch (error) {
       console.error('Failed to toggle wishlist:', error);
+      toast.error('Failed to update wishlist');
     }
   };
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User, Mail, Camera, Save, Loader2 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { authService } from '../services/authService';
 import { useAuthStore } from '../store/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
@@ -45,11 +46,9 @@ export const ProfilePage = () => {
     try {
       const response = await authService.updateProfile(formData);
       updateUser(response.data);
-      setSuccess('Profile updated successfully!');
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Profile updated successfully!');
     } catch (err) {
+      toast.error(err.message || 'Failed to update profile');
       setError(err.message || 'Failed to update profile');
     } finally {
       setLoading(false);

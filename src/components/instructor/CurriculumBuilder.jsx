@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Plus, Edit2, Trash2, GripVertical, Save, X, Video, Eye } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { instructorService } from '../../services/instructorService';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -11,6 +12,25 @@ export const CurriculumBuilder = ({ courseId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Helper function to convert MM:SS or seconds to seconds
+  const parseDuration = (duration) => {
+    if (!duration) return undefined;
+    
+    // If it's already a number, return it
+    if (typeof duration === 'number') return duration;
+    
+    // If it's a string like "10:30"
+    const str = String(duration).trim();
+    if (str.includes(':')) {
+      const [minutes, seconds] = str.split(':').map(Number);
+      return (minutes * 60) + (seconds || 0);
+    }
+    
+    // If it's just a number as string
+    const num = parseInt(str, 10);
+    return isNaN(num) ? undefined : num;
+  };
 
   // Section form state
   const [isAddingSection, setIsAddingSection] = useState(false);
@@ -37,9 +57,10 @@ export const CurriculumBuilder = ({ courseId }) => {
   const fetchSections = async () => {
     try {
       setLoading(true);
-      const response = await instructorService.getSections(courseId);
+      const response = await instructorService.getCourseSections(courseId);
       setSections(response.data || []);
     } catch (err) {
+      toast.error('Failed to load curriculum');
       setError('Failed to load curriculum');
     } finally {
       setLoading(false);
@@ -48,7 +69,10 @@ export const CurriculumBuilder = ({ courseId }) => {
 
   // Section Handlers
   const handleAddSection = async () => {
-    if (!sectionTitle.trim()) return;
+    if (!sectionTitle.trim()) {
+      toast.error('Please enter a section title');
+      return;
+    }
 
     try {
       const response = await instructorService.createSection(courseId, {
@@ -58,15 +82,18 @@ export const CurriculumBuilder = ({ courseId }) => {
       setSections([...sections, response.data]);
       setSectionTitle('');
       setIsAddingSection(false);
-      setSuccess('Section added successfully');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Section added successfully');
     } catch (err) {
+      toast.error(err.message || 'Failed to create section');
       setError(err.message || 'Failed to create section');
     }
   };
 
   const handleUpdateSection = async (sectionId) => {
-    if (!sectionTitle.trim()) return;
+    if (!sectionTitle.trim()) {
+      toast.error('Please enter a section title');
+      return;
+    }
 
     try {
       const response = await instructorService.updateSection(sectionId, {
@@ -75,9 +102,9 @@ export const CurriculumBuilder = ({ courseId }) => {
       setSections(sections.map(s => s._id === sectionId ? response.data : s));
       setEditingSectionId(null);
       setSectionTitle('');
-      setSuccess('Section updated successfully');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Section updated successfully');
     } catch (err) {
+      toast.error(err.message || 'Failed to update section');
       setError(err.message || 'Failed to update section');
     }
   };
@@ -88,9 +115,9 @@ export const CurriculumBuilder = ({ courseId }) => {
     try {
       await instructorService.deleteSection(sectionId);
       setSections(sections.filter(s => s._id !== sectionId));
-      setSuccess('Section deleted successfully');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Section deleted successfully');
     } catch (err) {
+      toast.error(err.message || 'Failed to delete section');
       setError(err.message || 'Failed to delete section');
     }
   };
@@ -107,10 +134,30 @@ export const CurriculumBuilder = ({ courseId }) => {
 
   // Lecture Handlers
   const handleAddLecture = async (sectionId) => {
-    if (!lectureForm.title.trim()) return;
+    if (!lectureForm.title.trim()) {
+      toast.error('Please enter a lecture title');
+      return;
+    }
 
     try {
-      const response = await instructorService.createLecture(sectionId, lectureForm);
+      const lectureData = {
+        title: lectureForm.title,
+        isPreview: lectureForm.isPreview,
+      };
+      
+      // Add optional fields only if provided
+      if (lectureForm.videoUrl) {
+        lectureData.videoUrl = lectureForm.videoUrl;
+      }
+      
+      if (lectureForm.duration) {
+        const durationInSeconds = parseDuration(lectureForm.duration);
+        if (durationInSeconds !== undefined) {
+          lectureData.duration = durationInSeconds;
+        }
+      }
+
+      const response = await instructorService.createLecture(sectionId, lectureData);
       
       setSections(sections.map(section => {
         if (section._id === sectionId) {
@@ -124,18 +171,38 @@ export const CurriculumBuilder = ({ courseId }) => {
 
       resetLectureForm();
       setAddingLectureToSection(null);
-      setSuccess('Lecture added successfully');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Lecture added successfully');
     } catch (err) {
+      toast.error(err.message || 'Failed to create lecture');
       setError(err.message || 'Failed to create lecture');
     }
   };
 
   const handleUpdateLecture = async () => {
-    if (!lectureForm.title.trim() || !editingLecture) return;
+    if (!lectureForm.title.trim() || !editingLecture) {
+      toast.error('Please enter a lecture title');
+      return;
+    }
 
     try {
-      const response = await instructorService.updateLecture(editingLecture._id, lectureForm);
+      const lectureData = {
+        title: lectureForm.title,
+        isPreview: lectureForm.isPreview,
+      };
+      
+      // Add optional fields only if provided
+      if (lectureForm.videoUrl) {
+        lectureData.videoUrl = lectureForm.videoUrl;
+      }
+      
+      if (lectureForm.duration) {
+        const durationInSeconds = parseDuration(lectureForm.duration);
+        if (durationInSeconds !== undefined) {
+          lectureData.duration = durationInSeconds;
+        }
+      }
+
+      const response = await instructorService.updateLecture(editingLecture._id, lectureData);
       
       setSections(sections.map(section => ({
         ...section,
@@ -146,9 +213,9 @@ export const CurriculumBuilder = ({ courseId }) => {
 
       resetLectureForm();
       setEditingLecture(null);
-      setSuccess('Lecture updated successfully');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Lecture updated successfully');
     } catch (err) {
+      toast.error(err.message || 'Failed to update lecture');
       setError(err.message || 'Failed to update lecture');
     }
   };
@@ -164,9 +231,9 @@ export const CurriculumBuilder = ({ courseId }) => {
         lectures: (section.lectures || []).filter(lecture => lecture._id !== lectureId)
       })));
 
-      setSuccess('Lecture deleted successfully');
-      setTimeout(() => setSuccess(''), 3000);
+      toast.success('Lecture deleted successfully');
     } catch (err) {
+      toast.error(err.message || 'Failed to delete lecture');
       setError(err.message || 'Failed to delete lecture');
     }
   };

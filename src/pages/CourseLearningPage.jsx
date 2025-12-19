@@ -15,6 +15,7 @@ import {
   X,
   Menu
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { courseService } from '../services/courseService';
 import { progressService } from '../services/progressService';
 import { sectionService } from '../services/sectionService';
@@ -98,14 +99,18 @@ export const CourseLearningPage = () => {
       // Move to next lecture only if marking as complete
       const wasCompleted = isLectureCompleted(currentLecture._id);
       if (!wasCompleted) {
+        toast.success('Lecture marked as complete!');
         const allLectures = sections.flatMap(s => s.lectures);
         const currentIndex = allLectures.findIndex(l => l._id === currentLecture._id);
         if (currentIndex < allLectures.length - 1) {
           setCurrentLecture(allLectures[currentIndex + 1]);
         }
+      } else {
+        toast.success('Lecture marked as incomplete');
       }
     } catch (error) {
       console.error('Failed to toggle lecture completion:', error);
+      toast.error('Failed to update lecture status');
     }
   };
 
