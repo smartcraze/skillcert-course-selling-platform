@@ -28,7 +28,7 @@ dist-ssr
 # env files
 .env
 backend/.env
-.env.*
+.env
 FRONTEND_README.md
 INSTRUCTOR_FEATURES.md
 PAGES_COMPLETED.md
