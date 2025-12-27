@@ -1,16 +1,174 @@
-# React + Vite
+## installtion
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+```bash
+sudo apt install -y build-essential curl wget git unzip
+```
 
-Currently, two official plugins are available:
+##  Node.js (Proper Way using NVM)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Never install Node via `apt` directly.
 
-## React Compiler
+### Install NVM
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+```
 
-## Expanding the ESLint configuration
+Reload shell:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+source ~/.bashrc
+```
+
+### Install Node (LTS)
+
+```bash
+nvm install --lts
+nvm use --lts
+```
+
+Verify:
+
+```bash
+node -v
+npm -v
+```
+
+##  Bun 
+
+Since you use **Bun + TypeScript**.
+
+```bash
+curl -fsSL https://bun.sh/install | bash
+source ~/.bashrc
+```
+
+Verify:
+
+```bash
+bun -v
+```
+
+---
+
+## 5. PM2 (Process Manager – Mandatory for Backend)
+
+Used in production everywhere.
+
+```bash
+npm install -g pm2
+```
+
+Verify:
+
+```bash
+pm2 -v
+```
+
+---
+
+## 6. Nginx (Reverse Proxy)
+
+Required to expose frontend/backend on port 80/443.
+
+```bash
+sudo apt install -y nginx
+sudo systemctl enable nginx
+sudo systemctl start nginx
+```
+Check:
+
+```bash
+systemctl status nginx
+```
+
+
+## create reverse proxy 
+```bash
+sudo rm sudo vi /etc/nginx/nginx.conf
+sudo vi /etc/nginx/nginx.conf
+```
+
+
+```nginx
+
+events {
+    # Event directives...
+}
+
+http {
+	server {
+    listen 80;
+    server_name be1.100xdevs.com;
+
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+	}
+}
+
+```
+
+```bash
+sudo nginx -s reload
+```
+
+
+
+
+## 7. Firewall (Important on VM)
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 80
+sudo ufw allow 443
+sudo ufw enable
+```
+
+Check:
+
+```bash
+sudo ufw status
+```
+
+## 9. Project Setup (Example)
+
+```bash
+git clone <repo-url>
+cd project
+bun install   # or npm install
+```
+
+Run backend:
+
+```bash
+pm2 start index.ts --name backend
+pm2 save
+```
+
+---
+
+## 10. Frontend (Vite Fix on VM)
+
+**Important:** Vite must listen on `0.0.0.0`
+
+```bash
+bun run dev -- --host 0.0.0.0
+```
+
+or in `vite.config.js`:
+
+```js
+server: {
+  host: '0.0.0.0',
+  port: 5173
+}
+```
